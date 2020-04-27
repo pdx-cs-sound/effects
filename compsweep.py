@@ -65,7 +65,7 @@ for i in range(0, npsignal - nwindow, nwindow):
     if peak_db >= threshold:
         block *= scale(peak_db, ratio)
     elif normalize:
-        block *= scale(peak_db, 1)
+        block *= scale(peak_db, 1 - 1 / ratio)
 
 for i in range(0, npsignal - nwindow, nwindow):
     j = min(i + nwindow, npsignal)
