@@ -50,18 +50,12 @@ psignal *= ampl.transpose()
 def inv_db(p):
     return np.power(10, p / 20)
 
-def scale(p, normal=None):
+def scale(p, r):
     excess = p - threshold
-    scale_db = excess * (1 / ratio - 1)
-    if normal is not None:
-        scale_db += normal
+    scale_db = excess * (1 / r - 1)
+    if normalize:
+        scale_db += threshold * (1 / ratio - 1)
     return inv_db(scale_db)
-
-if normalize:
-    loud_normal = threshold * (1 / ratio - 1)
-    soft_normal = inv_db(loud_normal)
-else:
-    loud_normal = None
 
 for i in range(0, npsignal - nwindow, nwindow):
     j = min(i + nwindow, npsignal)
@@ -69,9 +63,9 @@ for i in range(0, npsignal - nwindow, nwindow):
     peak = np.max(block) - np.min(block)
     peak_db = 20 * np.log10(peak)
     if peak_db >= threshold:
-        block *= scale(peak_db, normal=loud_normal)
+        block *= scale(peak_db, ratio)
     elif normalize:
-        block *= soft_normal
+        block *= scale(peak_db, 1)
 
 for i in range(0, npsignal - nwindow, nwindow):
     j = min(i + nwindow, npsignal)
