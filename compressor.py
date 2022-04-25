@@ -3,9 +3,8 @@
 
 # https://www.uaudio.com/blog/audio-compression-basics/
 
-import argparse
+import argparse, sounddevice, soundfile
 import numpy as np
-import soundfile
 
 ap = argparse.ArgumentParser()
 ap.add_argument(
@@ -37,6 +36,7 @@ ap.add_argument(
 )
 ap.add_argument(
     "outfile",
+    nargs="?",
     help="Output audio file.",
 )
 args = ap.parse_args()
@@ -45,6 +45,9 @@ normalize = not args.unnormalized
 in_sound = soundfile.SoundFile(args.infile)
 if in_sound.channels != 1:
     eprint("sorry, mono audio only")
+    exit(1)
+if in_sound.subtype != 'PCM_16':
+    eprint("sorry, 16-bit only")
     exit(1)
 psignal = in_sound.read()
 npsignal = len(psignal)
@@ -75,12 +78,15 @@ for i in range(0, npsignal - nwindow, nwindow):
     elif normalize:
         block *= scale(peak_db, 1 - 1 / ratio)
 
-outfile = open(args.outfile, "wb")
-soundfile.write(
-    outfile,
-    psignal,
-    in_sound.samplerate,
-    subtype=in_sound.subtype,
-    endian=in_sound.endian,
-    format=in_sound.format,
-)
+if args.outfile is None:
+    sounddevice.play(psignal, samplerate=in_sound.samplerate, blocking=True)
+else:
+    outfile = open(args.outfile, "wb")
+    soundfile.write(
+        outfile,
+        psignal,
+        in_sound.samplerate,
+        subtype=in_sound.subtype,
+        endian=in_sound.endian,
+        format=in_sound.format,
+    )
