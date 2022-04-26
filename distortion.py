@@ -18,8 +18,9 @@ ap.add_argument(
 )
 ap.add_argument(
     "-s", "--smooth",
-    help="Smooth clip.",
-    action="store_true",
+    help="Smooth clip as overdrive fraction.",
+    type=float,
+    default=None,
 )
 ap.add_argument(
     "-c", "--crunch",
@@ -48,22 +49,27 @@ if in_sound.subtype != 'PCM_16':
 psignal = in_sound.read()
 npsignal = len(psignal)
 
-def smooth(x):
-    return 2 * (1 / (1 + np.exp(-(x + 1)/2))) - 1
+def smoother(a, x):
+    return 2 * (1 / (1 + np.exp(-a * (0.5 * x + 0.5)))) - 1
 
 threshold = args.threshold
 asymmetric = args.asymmetric
 crunch = args.crunch
+smooth = args.smooth
 for i in range(npsignal):
     x = psignal[i]
     if crunch:
-        x = 0.25 * int(2 ** crunch * x) / 2 ** crunch
+        y = 0.25 * int(2 ** crunch * x) / 2 ** crunch
+    elif smooth:
+        y = smoother(smooth, x)
     elif not asymmetric and x > threshold:
-        x = threshold
+        y = threshold
     elif x < -threshold:
-        x = -threshold
+        y = -threshold
+    else:
+        y = x
     
-    psignal[i] = x
+    psignal[i] = y
 
 if args.outfile is None:
     sounddevice.play(psignal, samplerate=in_sound.samplerate, blocking=True)
