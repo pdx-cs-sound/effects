@@ -1,7 +1,7 @@
 # Distortion
 # Bart Massey 2022
 
-import argparse, sounddevice, soundfile
+import argparse, audio, sounddevice
 import numpy as np
 
 ap = argparse.ArgumentParser()
@@ -39,15 +39,9 @@ ap.add_argument(
 )
 args = ap.parse_args()
 
-in_sound = soundfile.SoundFile(args.infile)
-if in_sound.channels != 1:
-    eprint("sorry, mono audio only")
-    exit(1)
-if in_sound.subtype != 'PCM_16':
-    eprint("sorry, 16-bit only")
-    exit(1)
-psignal = in_sound.read()
+info, psignal = audio.read_wave(args.infile)
 npsignal = len(psignal)
+rate = info.framerate
 
 def smoother(a, x):
     return 2 * (1 / (1 + np.exp(-a * (0.5 * x + 0.5)))) - 1
@@ -72,14 +66,6 @@ for i in range(npsignal):
     psignal[i] = y
 
 if args.outfile is None:
-    sounddevice.play(psignal, samplerate=in_sound.samplerate, blocking=True)
+    sounddevice.play(psignal, samplerate=rate, blocking=True)
 else:
-    outfile = open(args.outfile, "wb")
-    soundfile.write(
-        outfile,
-        psignal,
-        in_sound.samplerate,
-        subtype=in_sound.subtype,
-        endian=in_sound.endian,
-        format=in_sound.format,
-    )
+    audio.write_wave(args.outfile, info, psignal)

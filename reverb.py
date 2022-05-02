@@ -3,9 +3,8 @@
 
 # https://www.uaudio.com/blog/audio-compression-basics/
 
-import argparse
+import argparse, audio, sounddevice
 import numpy as np
-import soundfile
 
 ap = argparse.ArgumentParser()
 ap.add_argument(
@@ -32,6 +31,7 @@ ap.add_argument(
 )
 ap.add_argument(
     "outfile",
+    nargs="?",
     help="Output audio file.",
 )
 args = ap.parse_args()
@@ -60,14 +60,11 @@ class RingBuffer(object):
     def is_empty(self):
         return self.empty
 
-in_sound = soundfile.SoundFile(args.infile)
-if in_sound.channels != 1:
-    eprint("sorry, mono audio only")
-    exit(1)
-psignal = in_sound.read()
+info, psignal = audio.read_wave(args.infile)
 npsignal = len(psignal)
+rate = info.framerate
 
-delay = int(args.delay * in_sound.samplerate)
+delay = int(args.delay * 0.001 * rate)
 wet = args.wet
 reverb = args.reverb
 buffer = RingBuffer(delay)
@@ -81,12 +78,7 @@ for (i, s) in enumerate(psignal):
     buffer.enqueue((1 - reverb) * s + reverb * sdelay)
 outsignal = np.array(outsignal)
 
-outfile = open(args.outfile, "wb")
-soundfile.write(
-    outfile,
-    outsignal,
-    in_sound.samplerate,
-    subtype=in_sound.subtype,
-    endian=in_sound.endian,
-    format=in_sound.format,
-)
+if args.outfile is None:
+    sounddevice.play(outsignal, samplerate=rate, blocking=True)
+else:
+    audio.write_wave(args.outfile, info, outsignal)

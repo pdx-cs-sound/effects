@@ -1,7 +1,7 @@
 # Audio Chorus
 # Bart Massey
 
-import argparse, math, soundfile
+import argparse, audio, math, sounddevice
 import numpy as np
 
 ap = argparse.ArgumentParser()
@@ -9,7 +9,7 @@ ap.add_argument(
     "-d", "--delay",
     help="Base delay in ms.",
     type=float,
-    default=10.0,
+    default=1.0,
 )
 ap.add_argument(
     "-w", "--wet",
@@ -21,13 +21,13 @@ ap.add_argument(
     "-f", "--frequency",
     help="Chorus LFO frequency in Hz.",
     type=float,
-    default=10,
+    default=0.25,
 )
 ap.add_argument(
     "-a", "--amplitude",
     help="Chorus LFO amplitude in ms.",
     type=float,
-    default=2,
+    default=1,
 )
 ap.add_argument(
     "infile",
@@ -35,6 +35,7 @@ ap.add_argument(
 )
 ap.add_argument(
     "outfile",
+    nargs="?",
     help="Output audio file.",
 )
 args = ap.parse_args()
@@ -80,13 +81,9 @@ assert tbuf.dequeue() == 3
 assert tbuf.dequeue() == 4
 assert tbuf.is_empty()
 
-in_sound = soundfile.SoundFile(args.infile)
-if in_sound.channels != 1:
-    eprint("sorry, mono audio only")
-    exit(1)
-psignal = in_sound.read()
+info, psignal = audio.read_wave(args.infile)
 npsignal = len(psignal)
-rate = in_sound.samplerate
+rate = info.framerate
 
 ampl = args.amplitude * rate / 1000
 delay = max(args.delay * rate / 1000, ampl)
@@ -108,14 +105,9 @@ for (i, s) in enumerate(psignal):
         y = buf.lookback(int(lb))
         buf.dequeue()
     outsignal.append((1 - wet) * s + wet * y)
-outsignal = np.array(outsignal)
+psignal = np.array(outsignal)
 
-outfile = open(args.outfile, "wb")
-soundfile.write(
-    outfile,
-    outsignal,
-    in_sound.samplerate,
-    subtype=in_sound.subtype,
-    endian=in_sound.endian,
-    format=in_sound.format,
-)
+if args.outfile is None:
+    sounddevice.play(psignal, samplerate=rate, blocking=True)
+else:
+    audio.write_wave(args.outfile, info, psignal)
