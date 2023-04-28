@@ -6,8 +6,14 @@ import numpy as np
 
 ap = argparse.ArgumentParser()
 ap.add_argument(
+    "-v", "--volume",
+    help="Volume multiplier.",
+    type=float,
+    default=1.0,
+)
+ap.add_argument(
     "-t", "--threshold",
-    help="Compression threshold as fraction.",
+    help="Clipping threshold as fraction.",
     type=float,
     default=0.5,
 )
@@ -64,6 +70,7 @@ for i in range(npsignal):
         y = x
     
     psignal[i] = y
+psignal *= args.volume
 
 if args.outfile is None:
     sounddevice.play(psignal, samplerate=rate, blocking=True)
