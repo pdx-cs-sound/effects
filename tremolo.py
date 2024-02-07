@@ -13,7 +13,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--depth",
-    help="Tremolo depth in msecs.",
+    help="Tremolo depth as gain multiplier.",
     type=float,
     default=0.10,
 )
@@ -44,8 +44,9 @@ for i in range(nchannel):
         fli = int(np.floor(ti))
         cei = int(np.ceil(ti))
         dt = ti - fli
-        c = (1.0 - dt) * channel[fli] + dt * channel[cei]
-        output[i] = c
+        if fli < nchannel and cei < nchannel:
+            c = (1.0 - dt) * channel[fli] + dt * channel[cei]
+            output[i] = c
 
 if args.outfile is None:
     sounddevice.play(output, samplerate=rate, blocking=True)
