@@ -31,6 +31,12 @@ ap.add_argument(
     action="store_true",
 )
 ap.add_argument(
+    "-l", "--level",
+    help="Level measurement mode.",
+    choices = ("rms", "peak"),
+    default = "peak",
+)
+ap.add_argument(
     "infile",
     help="Input audio file.",
 )
@@ -60,17 +66,23 @@ def scale(p, r):
     scale_db = excess * (1 / r - 1)
     if normalize:
         scale_db += threshold * (1 / ratio - 1)
-    return inv_db(scale_db)
+    return min(inv_db(scale_db), 1)
 
 for i in range(0, npsignal - nwindow, nwindow):
     j = min(i + nwindow, npsignal)
     block = psignal[i:j]
-    peak = np.max(block) - np.min(block)
-    peak_db = 20 * np.log10(peak)
-    if peak_db >= threshold:
-        block *= scale(peak_db, ratio)
+    peak_level = np.max(block) - np.min(block)
+    peak_db = 20 * np.log10(peak_level)
+    rms_level = np.sqrt(np.sum(block**2) / nwindow)
+    rms_db = 20 * np.log10(rms_level)
+    if args.level == "peak":
+        level_db = peak_db
+    elif args.level == "rms":
+        level_db = rms_db
+    if level_db >= threshold:
+        block *= scale(level_db, ratio)
     elif normalize:
-        block *= scale(peak_db, 1 - 1 / ratio)
+        block *= scale(level_db, 1 - 1 / ratio)
 
 if args.outfile is None:
     sounddevice.play(psignal, samplerate=rate, blocking=True)
