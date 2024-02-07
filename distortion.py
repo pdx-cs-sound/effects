@@ -59,9 +59,9 @@ smooth = args.smooth
 for i in range(npsignal):
     x = psignal[i]
     if crunch:
-        y = 0.25 * int(2 ** crunch * x) / 2 ** crunch
+        y = int(2 ** crunch * x) / 2 ** crunch
     elif smooth:
-        y = smoother(smooth, x)
+        y = smoother(smooth, x) / smooth
     elif not asymmetric and x > threshold:
         y = threshold
     elif x < -threshold:
