@@ -5,10 +5,6 @@ SAMPLE_RATE = 48000
 
 def read_wave(filename):
     rate, data = wavfile.read(filename)
-    if rate != SAMPLE_RATE:
-        raise ValueError(
-            f"{filename}: sample rate {rate} != {SAMPLE_RATE}"
-        )
     if data.dtype == np.int16:
         signal = data.astype(np.float32) / 32768.0
     elif data.dtype == np.int32:
