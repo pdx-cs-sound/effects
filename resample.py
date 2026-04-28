@@ -30,8 +30,9 @@ npsignal = len(psignal)
 filter = signal.iirfilter(32, 0.5, btype='lowpass', rp=1.0, rs=3.0, ftype='ellip', output='sos')
 
 if args.direction == 'upsample':
-    outsignal = np.zeros(2 * npsignal, dtype = np.float32)
-    outsignal[::2] = 2 * signal.sosfilt(filter, psignal)
+    stuffed = np.zeros(2 * npsignal, dtype=np.float32)
+    stuffed[::2] = psignal
+    outsignal = 2 * signal.sosfilt(filter, stuffed)
     outrate = 2 * rate
 else:
     outsignal = signal.sosfilt(filter, psignal)[::2]
