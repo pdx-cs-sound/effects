@@ -7,7 +7,13 @@ import numpy as np
 ap = argparse.ArgumentParser()
 ap.add_argument(
     "-v", "--volume",
-    help="Volume multiplier.",
+    help="Output volume multiplier.",
+    type=float,
+    default=1.0,
+)
+ap.add_argument(
+    "-g", "--gain",
+    help="Input gain multiplier.",
     type=float,
     default=1.0,
 )
@@ -35,6 +41,11 @@ ap.add_argument(
     default=None,
 )
 ap.add_argument(
+    "-z", "--zero-crossing",
+    help="quantize to 1-bit",
+    action = "store_true",
+)
+ap.add_argument(
     "infile",
     help="Input audio file.",
 )
@@ -52,14 +63,18 @@ rate = info.framerate
 def smoother(a, x):
     return 2 * (1 / (1 + np.exp(-a * (0.5 * x + 0.5)))) - 1
 
+psignal *= args.gain
 threshold = args.threshold
 asymmetric = args.asymmetric
-crunch = args.crunch
+if args.crunch is not None:
+    crunch = 2 ** args.crunch
 smooth = args.smooth
 for i in range(npsignal):
     x = psignal[i]
-    if crunch:
-        y = int(2 ** crunch * x) / 2 ** crunch
+    if args.zero_crossing:
+        y = 1 if x > 0 else -1
+    elif crunch:
+        y = np.floor(crunch * (x - 1)) / crunch
     elif smooth:
         y = smoother(smooth, x) / smooth
     elif not asymmetric and x > threshold:
