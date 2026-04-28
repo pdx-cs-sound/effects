@@ -36,7 +36,7 @@ ap.add_argument(
 )
 ap.add_argument(
     "-c", "--crunch",
-    help="Bitcrunch to given number of bits.",
+    help="Bitcrunch to N-bit depth (midtread, 2^N+1 levels symmetric about 0).",
     type=int,
     default=None,
 )
@@ -65,14 +65,14 @@ def smoother(a, x):
 psignal *= args.gain
 threshold = args.threshold
 asymmetric = args.asymmetric
-crunch = 2 ** args.crunch if args.crunch is not None else None
+crunch = 2 ** (args.crunch - 1) if args.crunch is not None else None
 smooth = args.smooth
 for i in range(npsignal):
     x = psignal[i]
     if args.zero_crossing:
         y = 1 if x > 0 else -1
     elif crunch:
-        y = np.floor(crunch * (x - 1)) / crunch
+        y = np.round(crunch * x) / crunch
     elif smooth:
         y = smoother(smooth, x) / smooth
     elif not asymmetric and x > threshold:
