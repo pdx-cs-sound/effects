@@ -36,8 +36,8 @@ args = parser.parse_args()
 
 lap = 4
 wah_rate = lap / args.rate
-info, channel = audio.read_wave(args.infile)
-rate = info.framerate
+rate, channel = audio.read_wave(args.infile)
+nframes = len(channel)
 
 blocksize = rate // 100
 window = signal.windows.hann(blocksize)
@@ -49,10 +49,10 @@ fws = [ signal.firwin(128, c, window=('kaiser', 0.5))
         for c in contour ]
 
 icontour = 0
-wahed = np.zeros(info.nframes)
+wahed = np.zeros(nframes, dtype=np.float32)
 start = 0
-while start < info.nframes:
-    end = min(start + blocksize, info.nframes)
+while start < nframes:
+    end = min(start + blocksize, nframes)
     block = channel[start:end]
     icontour = (icontour + 1) % ncontour
     block = signal.convolve(block, fws[icontour], mode='same')
@@ -64,4 +64,4 @@ while start < info.nframes:
 if args.outfile is None:
     sounddevice.play(wahed, samplerate=rate, blocking=True)
 else:
-    audio.write_wave(args.outfile, info, wahed)
+    audio.write_wave(args.outfile, wahed, rate)

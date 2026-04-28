@@ -56,9 +56,8 @@ ap.add_argument(
 )
 args = ap.parse_args()
 
-info, psignal = audio.read_wave(args.infile)
+rate, psignal = audio.read_wave(args.infile)
 npsignal = len(psignal)
-rate = info.framerate
 
 def smoother(a, x):
     return 2 * (1 / (1 + np.exp(-a * (0.5 * x + 0.5)))) - 1
@@ -90,4 +89,4 @@ psignal *= args.volume
 if args.outfile is None:
     sounddevice.play(psignal, samplerate=rate, blocking=True)
 else:
-    audio.write_wave(args.outfile, info, psignal)
+    audio.write_wave(args.outfile, psignal, rate)

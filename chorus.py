@@ -81,9 +81,8 @@ assert tbuf.dequeue() == 3
 assert tbuf.dequeue() == 4
 assert tbuf.is_empty()
 
-info, psignal = audio.read_wave(args.infile)
+rate, psignal = audio.read_wave(args.infile)
 npsignal = len(psignal)
-rate = info.framerate
 
 ampl = args.amplitude * rate / 1000
 delay = max(args.delay * rate / 1000, ampl)
@@ -110,4 +109,4 @@ psignal = np.array(outsignal)
 if args.outfile is None:
     sounddevice.play(psignal, samplerate=rate, blocking=True)
 else:
-    audio.write_wave(args.outfile, info, psignal)
+    audio.write_wave(args.outfile, psignal, rate)

@@ -28,8 +28,7 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-info, channel = audio.read_wave(args.infile)
-rate = info.framerate
+rate, channel = audio.read_wave(args.infile)
 
 nchannel = len(channel)
 t = np.linspace(0, nchannel / float(rate), nchannel);
@@ -51,4 +50,4 @@ for i in range(nchannel):
 if args.outfile is None:
     sounddevice.play(output, samplerate=rate, blocking=True)
 else:
-    audio.write_wave(args.outfile, info, output)
+    audio.write_wave(args.outfile, output, rate)

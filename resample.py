@@ -24,9 +24,8 @@ ap.add_argument(
 )
 args = ap.parse_args()
 
-info, psignal = audio.read_wave(args.infile)
+rate, psignal = audio.read_wave(args.infile)
 npsignal = len(psignal)
-rate = info.framerate
 
 filter = signal.iirfilter(32, 0.5, btype='lowpass', rp=1.0, rs=3.0, ftype='ellip', output='sos')
 
@@ -39,4 +38,4 @@ else:
 if args.outfile is None:
     sounddevice.play(outsignal, samplerate=rate, blocking=True)
 else:
-    audio.write_wave(args.outfile, info, outsignal)
+    audio.write_wave(args.outfile, outsignal, rate)

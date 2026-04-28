@@ -60,9 +60,8 @@ class RingBuffer(object):
     def is_empty(self):
         return self.empty
 
-info, psignal = audio.read_wave(args.infile)
+rate, psignal = audio.read_wave(args.infile)
 npsignal = len(psignal)
-rate = info.framerate
 
 delay = int(args.delay * 0.001 * rate)
 wet = args.wet
@@ -81,4 +80,4 @@ outsignal = np.array(outsignal)
 if args.outfile is None:
     sounddevice.play(outsignal, samplerate=rate, blocking=True)
 else:
-    audio.write_wave(args.outfile, info, outsignal)
+    audio.write_wave(args.outfile, outsignal, rate)

@@ -1,45 +1,29 @@
-import sys, wave
 import numpy as np
+from scipy.io import wavfile
 
-# Read a tone from a wave file.
+SAMPLE_RATE = 48000
+
 def read_wave(filename):
-    w = wave.open(filename, "rb")
-    info = w.getparams()
-    fbytes = w.readframes(info.nframes)
-    w.close()
-    sampletypes = {
-        1: (np.uint8, -(1 << 7), 1 << 8),
-        2: (np.int16, 0.5, 1 << 16),
-        4: (np.int32, 0.5, 1 << 32),
-    }
-    if info.sampwidth not in sampletypes:
-        raise IOException()
-    sampletype, sampleoff, samplewidth = sampletypes[info.sampwidth]
-    samples = np.frombuffer(fbytes, dtype=sampletype)
-    scale = 2.0 / samplewidth
-    fsamples = scale * (samples + sampleoff)
-    if info.nchannels == 1:
-        channels = np.array(fsamples)
+    rate, data = wavfile.read(filename)
+    if rate != SAMPLE_RATE:
+        raise ValueError(
+            f"{filename}: sample rate {rate} != {SAMPLE_RATE}"
+        )
+    if data.dtype == np.int16:
+        signal = data.astype(np.float32) / 32768.0
+    elif data.dtype == np.int32:
+        signal = data.astype(np.float32) / 2147483648.0
+    elif data.dtype == np.uint8:
+        signal = (data.astype(np.float32) - 128.0) / 128.0
+    elif data.dtype in (np.float32, np.float64):
+        signal = data.astype(np.float32)
     else:
-        channels = np.reshape(fsamples, (-1, info.nchannels))
-        channels = np.transpose(channels)
-    return (info, channels)
+        raise ValueError(f"unsupported dtype {data.dtype}")
+    if signal.ndim == 2:
+        signal = signal.mean(axis=1, dtype=np.float32)
+    return rate, signal
 
-# Write a tone to a wave file.
-def write_wave(filename, info, channels):
-    samples = np.reshape(np.transpose(channels), (-1,))
-    sampletypes = {
-        1: ('u1', (1 << 7), 1 << 8),
-        2: ('<i2', 0.5, 1 << 16),
-        4: ('<i4', 0.5, 1 << 32),
-    }
-    if info.sampwidth not in sampletypes:
-        raise IOException()
-    sampletype, sampleoff, samplewidth = sampletypes[info.sampwidth]
-    scale = samplewidth / 2.0
-    fsamples = scale * samples + sampleoff
-    hsamples = np.array(fsamples, dtype=sampletype)
-    w = wave.open(filename, "wb")
-    w.setparams(info)
-    w.writeframes(hsamples)
-    w.close()
+def write_wave(filename, signal, rate=SAMPLE_RATE):
+    clipped = np.clip(signal, -1.0, 1.0)
+    pcm = (clipped * 32767.0).astype(np.int16)
+    wavfile.write(filename, rate, pcm)

@@ -48,9 +48,8 @@ ap.add_argument(
 args = ap.parse_args()
 normalize = not args.unnormalized
 
-info, psignal = audio.read_wave(args.infile)
+rate, psignal = audio.read_wave(args.infile)
 npsignal = len(psignal)
-rate = info.framerate
 
 twindow = 0.001 * args.window
 nwindow = int(twindow * rate)
@@ -87,4 +86,4 @@ for i in range(0, npsignal - nwindow, nwindow):
 if args.outfile is None:
     sounddevice.play(psignal, samplerate=rate, blocking=True)
 else:
-    audio.write_wave(args.outfile, info, psignal)
+    audio.write_wave(args.outfile, psignal, rate)
