@@ -32,10 +32,12 @@ filter = signal.iirfilter(32, 0.5, btype='lowpass', rp=1.0, rs=3.0, ftype='ellip
 if args.direction == 'upsample':
     outsignal = np.zeros(2 * npsignal, dtype = np.float32)
     outsignal[::2] = 2 * signal.sosfilt(filter, psignal)
+    outrate = 2 * rate
 else:
     outsignal = signal.sosfilt(filter, psignal)[::2]
+    outrate = rate // 2
 
 if args.outfile is None:
-    sounddevice.play(outsignal, samplerate=rate, blocking=True)
+    sounddevice.play(outsignal, samplerate=outrate, blocking=True)
 else:
-    audio.write_wave(args.outfile, outsignal, rate)
+    audio.write_wave(args.outfile, outsignal, outrate)
