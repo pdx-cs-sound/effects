@@ -65,8 +65,7 @@ def smoother(a, x):
 psignal *= args.gain
 threshold = args.threshold
 asymmetric = args.asymmetric
-if args.crunch is not None:
-    crunch = 2 ** args.crunch
+crunch = 2 ** args.crunch if args.crunch is not None else None
 smooth = args.smooth
 for i in range(npsignal):
     x = psignal[i]
