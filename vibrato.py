@@ -13,7 +13,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--depth",
-    help="Vibrato depth as fraction of full signal.",
+    help="Vibrato depth in samples.",
     type=float,
     default=0.10,
 )
@@ -30,11 +30,24 @@ args = parser.parse_args()
 
 rate, channel = audio.read_wave(args.infile)
 
-t = np.linspace(0, len(channel) / float(rate), len(channel));
-lfo = args.depth * np.sin(2 * np.pi * args.freq * t)
-channel *= 1.0 - args.depth + lfo / 2
+nchannel = len(channel)
+t = np.linspace(0, nchannel / float(rate), nchannel);
+lfo = np.sin(2 * np.pi * args.freq * t)
+output = np.zeros(nchannel)
+depth = args.depth / 1000.0
+for i in range(nchannel):
+    ti = i + depth * lfo[i] * rate
+    if ti < 0 or ti >= nchannel:
+        c = 0
+    else:
+        fli = int(np.floor(ti))
+        cei = int(np.ceil(ti))
+        dt = ti - fli
+        if fli < nchannel and cei < nchannel:
+            c = (1.0 - dt) * channel[fli] + dt * channel[cei]
+            output[i] = c
 
 if args.outfile is None:
-    sounddevice.play(channel, samplerate=rate, blocking=True)
+    sounddevice.play(output, samplerate=rate, blocking=True)
 else:
-    audio.write_wave(args.outfile, channel, rate)
+    audio.write_wave(args.outfile, output, rate)
